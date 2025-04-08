@@ -23,6 +23,11 @@ Vibecoded by [Sooraj Chandran](https://x.com/soorajchandran_)
 
 ## Setup
 
+### Option 1: 
+Clone the repo, ask Cursor (or your IDE) to look at README.md and keep clicking run command until it works.
+
+#### Option 2:
+
 1. Clone the repository
 2. Create a virtual environment:
    ```bash
@@ -44,6 +49,10 @@ Vibecoded by [Sooraj Chandran](https://x.com/soorajchandran_)
    - JIRA_TIMEOUT: API timeout in seconds (default: 30)
    - JIRA_MAX_RESULTS: Maximum results per page (default: 50)
    - MCP_SERVER_PORT: Server port (default: 8000)
+
+
+Note:
+You'll have to create a static folder inside `src`.
 
 ## Running the Server
 
