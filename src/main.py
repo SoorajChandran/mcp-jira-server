@@ -83,6 +83,8 @@ class MCPJiraServer:
                 return await self._get_my_issues(message)
             elif command == 'get_transitions':
                 return await self._get_transitions(message)
+            elif command == 'get_issues_by_status':
+                return await self._get_issues_by_status(message)
             else:
                 return {'status': 'error', 'message': f'Unknown command: {command}'}
 
@@ -503,6 +505,92 @@ class MCPJiraServer:
                 }
             }
         }
+
+    async def _get_issues_by_status(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Get all issues by their status.
+        
+        Args:
+            message: Dictionary containing search parameters
+                - status: Status to filter by (e.g., 'To Do', 'In Progress', 'Done')
+                - page: Page number (optional)
+                - page_size: Results per page (optional)
+                - sort_by: Field to sort by (optional, default: 'updated')
+                - sort_order: 'asc' or 'desc' (optional, default: 'desc')
+        
+        Returns:
+            Dictionary containing issues with the specified status and pagination info
+        """
+        try:
+            data = message.get('data', {})
+            status = data.get('status')
+            page = max(1, int(data.get('page', 1)))
+            page_size = min(self.config.max_results, int(data.get('page_size', 20)))
+            sort_by = data.get('sort_by', 'updated')
+            sort_order = data.get('sort_order', 'DESC').upper()
+            
+            if not status:
+                return {'status': 'error', 'message': 'Missing status parameter'}
+
+            # Build JQL query
+            jql = f'status = "{status}"'
+            
+            # Add sorting
+            if sort_by in ['created', 'updated', 'priority', 'status', 'duedate']:
+                jql += f' ORDER BY {sort_by} {sort_order}'
+            
+            # Calculate pagination
+            start_at = (page - 1) * page_size
+            
+            # Fetch issues
+            issues = self.jira.search_issues(
+                jql,
+                startAt=start_at,
+                maxResults=page_size,
+                validate_query=True
+            )
+            
+            # Process results
+            results = [{
+                'key': issue.key,
+                'summary': issue.fields.summary,
+                'description': issue.fields.description,
+                'status': issue.fields.status.name,
+                'created': str(issue.fields.created),
+                'updated': str(issue.fields.updated),
+                'priority': str(issue.fields.priority) if issue.fields.priority else None,
+                'project': {
+                    'key': issue.fields.project.key,
+                    'name': issue.fields.project.name
+                },
+                'issuetype': {
+                    'name': issue.fields.issuetype.name,
+                    'subtask': issue.fields.issuetype.subtask
+                },
+                'duedate': str(issue.fields.duedate) if hasattr(issue.fields, 'duedate') and issue.fields.duedate else None
+            } for issue in issues]
+            
+            return {
+                'status': 'success',
+                'data': {
+                    'issues': results,
+                    'pagination': {
+                        'total': issues.total,
+                        'page': page,
+                        'page_size': page_size,
+                        'total_pages': (issues.total + page_size - 1) // page_size
+                    }
+                }
+            }
+            
+        except JIRAError as e:
+            logger.error(f'JIRA API error in get_issues_by_status: {e.status_code} - {e.text}')
+            return {'status': 'error', 'message': f'JIRA API error: {e.status_code} - {e.text}'}
+        except ValueError as e:
+            logger.error(f'Invalid input in get_issues_by_status: {str(e)}')
+            return {'status': 'error', 'message': f'Invalid input: {str(e)}'}
+        except Exception as e:
+            logger.error(f'Unexpected error in get_issues_by_status: {str(e)}')
+            return {'status': 'error', 'message': 'An unexpected error occurred'}
 
     async def test_connection(self):
         """Test Jira connection."""
