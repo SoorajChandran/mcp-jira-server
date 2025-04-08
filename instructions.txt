@@ -1,0 +1,8 @@
+When writing ticket descriptions
+- Be as detailed as possible based on the PRD
+- Don't improvise and add anything that's no in the PRD
+
+When you create and epic and subtasks
+- Create the epic first
+- Create each subtask and set the parent of the subtask to the epic
+
