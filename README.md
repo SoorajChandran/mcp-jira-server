@@ -1,6 +1,8 @@
 # MCP Jira Server
 
-A FastAPI-based MCP server that integrates with Jira for issue management.
+An MCP server that integrates with Jira for issue management.
+
+Vibecoded by [Sooraj Chandran](https://x.com/soorajchandran_)
 
 ## Features
 
