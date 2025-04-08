@@ -73,6 +73,8 @@ class MCPJiraServer:
                 return await self._get_issue(message)
             elif command == 'update_issue':
                 return await self._update_issue(message)
+            elif command == 'delete_issue':
+                return await self._delete_issue(message)
             elif command == 'search_issues':
                 return await self._search_issues(message)
             elif command == 'get_epic_with_subtasks':
@@ -98,22 +100,34 @@ class MCPJiraServer:
             'project': {'key': data['project']},
             'summary': data['summary'],
             'description': data['description'],
-            'issuetype': {'name': data.get('issue_type', 'Task')}
+            'issuetype': {'name': data.get('issuetype', 'Task')}
         }
 
-        # Add parent field for subtasks
-        if data.get('issue_type') == 'Subtask' and data.get('parent_issue'):
-            issue_dict['parent'] = {'key': data['parent_issue']}
+        # Handle parent for subtasks
+        if data.get('issuetype') == 'Sub-task' and data.get('parent'):
+            try:
+                parent_issue = self.jira.issue(data['parent'])
+                issue_dict['parent'] = {'key': parent_issue.key}
+            except JIRAError as e:
+                logger.error(f'Error getting parent issue: {str(e)}')
+                return {'status': 'error', 'message': f'Invalid parent issue: {str(e)}'}
 
-        issue = self.jira.create_issue(fields=issue_dict)
-        return {
-            'status': 'success',
-            'data': {
-                'issue_key': issue.key,
-                'issue_id': issue.id,
-                'self': issue.self
+        try:
+            issue = self.jira.create_issue(fields=issue_dict)
+            return {
+                'status': 'success',
+                'data': {
+                    'issue_key': issue.key,
+                    'issue_id': issue.id,
+                    'self': issue.self
+                }
             }
-        }
+        except JIRAError as e:
+            logger.error(f'JIRA API error in create_issue: {e.status_code} - {e.text}')
+            return {'status': 'error', 'message': f'Failed to create issue: {str(e)}'}
+        except Exception as e:
+            logger.error(f'Unexpected error in create_issue: {str(e)}')
+            return {'status': 'error', 'message': f'An unexpected error occurred while creating the issue: {str(e)}'}
 
     async def _get_issue(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Get Jira issue details."""
@@ -144,6 +158,8 @@ class MCPJiraServer:
             update_fields['summary'] = data['summary']
         if 'description' in data:
             update_fields['description'] = data['description']
+        if 'parent' in data:
+            update_fields['parent'] = {'key': data['parent']}
 
         issue = self.jira.issue(issue_key)
         
@@ -175,6 +191,27 @@ class MCPJiraServer:
             issue.update(fields=update_fields)
             
         return {'status': 'success', 'message': f'Updated issue {issue_key}'}
+
+    async def _delete_issue(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Delete a Jira issue."""
+        data = message.get('data', {})
+        issue_key = data.get('issue_key')
+        if not issue_key:
+            return {'status': 'error', 'message': 'Missing issue key'}
+
+        try:
+            issue = self.jira.issue(issue_key)
+            issue.delete()
+            return {
+                'status': 'success',
+                'message': f'Successfully deleted issue {issue_key}'
+            }
+        except JIRAError as e:
+            logger.error(f'JIRA API error in delete_issue: {e.status_code} - {e.text}')
+            return {'status': 'error', 'message': f'Failed to delete issue: {str(e)}'}
+        except Exception as e:
+            logger.error(f'Unexpected error in delete_issue: {str(e)}')
+            return {'status': 'error', 'message': f'An unexpected error occurred while deleting the issue: {str(e)}'}
 
     async def _search_issues(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Search for Jira issues by description.

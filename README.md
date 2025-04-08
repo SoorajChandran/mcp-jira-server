@@ -1,18 +1,13 @@
 # MCP Jira Server
 
-A FastAPI-based Microservice Control Plane server that integrates with Jira for issue management.
+A FastAPI-based MCP server that integrates with Jira for issue management.
 
 ## Features
 
 - Create, read, update Jira issues
-- Search issues with advanced filtering
+- Search issues
 - Epic management with subtasks
 - Personal issue tracking
-- RESTful API endpoints
-- Environment-based configuration
-- CORS support
-- Pagination support
-- Comprehensive error handling
 
 ## Prerequisites
 
