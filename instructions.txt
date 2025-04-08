@@ -6,3 +6,4 @@ When you create and epic and subtasks
 - Create the epic first
 - Create each subtask and set the parent of the subtask to the epic
 
+The endpoint is at /mcp

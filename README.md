@@ -2,6 +2,8 @@
 
 An MCP server that integrates with Jira for issue management.
 
+Demo video: [Watch the demo](https://www.loom.com/share/3237f6e71ec348fe9756252425078be5)
+
 Vibecoded by [Sooraj Chandran](https://x.com/soorajchandran_)
 
 ## Features
