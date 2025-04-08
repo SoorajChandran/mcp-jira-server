@@ -23,7 +23,7 @@ Vibecoded by [Sooraj Chandran](https://x.com/soorajchandran_)
 
 ## Setup
 
-### Option 1: 
+#### Option 1: 
 Clone the repo, ask Cursor (or your IDE) to look at README.md and keep clicking run command until it works.
 
 #### Option 2:
